@@ -1,0 +1,4 @@
+[submodule "mldsa-native"]
+	path = mldsa-native
+	url = git@github.com:pq-code-package/mldsa-native.git
+	branch = v1.0.0-beta
