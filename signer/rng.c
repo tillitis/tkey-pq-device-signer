@@ -1,9 +1,9 @@
 // Copyright (C) 2022, 2023 - Tillitis AB
 // SPDX-License-Identifier: GPL-2.0-only
 
-#include <tkey/blake2s.h>
+#include <blake2s/blake2s.h>
 #include <tkey/lib.h>
-#include <tkey/qemu_debug.h>
+#include <tkey/debug.h>
 #include <tkey/tk1_mem.h>
 
 #include "rng.h"
@@ -49,7 +49,7 @@ static void rng_update(rng_ctx *ctx)
 
 void rng_init(rng_ctx *ctx)
 {
-	qemu_puts("Init rng state\n");
+	debug_puts("Init rng state\n");
 
 	for (int i = 0; i < 8; i++) {
 		ctx->state[i] = cdi[i] + entropy_get();
@@ -69,7 +69,7 @@ void rng_init(rng_ctx *ctx)
 	rng_initalized = 1;
 }
 
-int rng_get(uint32_t *output, rng_ctx *ctx, int size)
+int rng_get(uint8_t *output, rng_ctx *ctx, int size)
 {
 	if (size < 1 || rng_initalized == 0) {
 		return -1;
@@ -78,21 +78,21 @@ int rng_get(uint32_t *output, rng_ctx *ctx, int size)
 	blake2s_ctx b2s_ctx;
 	int left = size;
 
-	qemu_puts("nbr bytes: ");
-	qemu_putinthex((uint32_t)size);
-	qemu_lf();
+	debug_puts("nbr bytes: ");
+	debug_putinthex((uint32_t)size);
+	debug_lf();
 
 	int i = 0;
 	int gen_size = 16; // max output in one round
 	while (left > 0) {
-
+        int nbytes = left < gen_size ? left : gen_size;
 		blake2s(ctx->digest, 32, NULL, 0, ctx->state, 64, &b2s_ctx);
-		memcpy(&output[i], ctx->digest, gen_size);
+		memcpy(&output[i], ctx->digest, nbytes);
 		rng_update(ctx);
-		left -= gen_size;
-		i += 4;
+		left -= nbytes;
+		i += nbytes;
 	}
-	qemu_puts("get rand out: \n");
-	qemu_hexdump((uint8_t *)output, size);
+	debug_puts("get rand out: \n");
+	debug_hexdump(output, size);
 	return 0;
 }

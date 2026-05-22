@@ -16,6 +16,6 @@ typedef struct {
 } rng_ctx;
 
 void rng_init(rng_ctx *ctx);
-int rng_get(uint32_t *output, rng_ctx *ctx, int bytes);
+int rng_get(uint8_t *output, rng_ctx *ctx, int bytes);
 
 #endif
