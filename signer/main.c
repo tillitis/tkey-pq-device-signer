@@ -13,6 +13,8 @@
 
 #include "app_proto.h"
 #include "platform.h"
+#include "blake2s/blake2s.h"
+#include "rng.h"
 
 // clang-format off
 static volatile uint32_t *cdi           = (volatile uint32_t *) TK1_MMIO_TK1_CDI_FIRST;
@@ -440,11 +442,18 @@ static int read_command(struct frame_header *hdr, uint8_t *cmd)
 	return 0;
 }
 
+rng_ctx * mld_rng_ctx; // Global RNG context used by mldsa-native
+
 int main(void)
 {
 	struct context ctx = {0};
 	enum state state = STATE_STARTED;
 	struct packet pkt = {0};
+	
+	// Initialize RNG and set global pointer for mldsa-native
+	rng_ctx rng_ctx;
+	rng_init(&rng_ctx);
+	mld_rng_ctx = &rng_ctx;
 
 	// Use Execution Monitor on RAM after app
 	*cpu_mon_first = *app_addr + *app_size;
