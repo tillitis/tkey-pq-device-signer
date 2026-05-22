@@ -15,7 +15,11 @@ LIBDIR ?= $(P)/../tkey-libs
 
 CC = clang
 
-INCLUDE = $(LIBDIR)/include
+INCLUDE_DIRS = $(LIBDIR)/include \
+	$(P)/mldsa-native/mldsa \
+	$(P)/signer
+
+INCLUDES = $(addprefix -I , $(INCLUDE_DIRS))
 
 # If you want libcommon's debug_puts() et cetera to output something
 # on the QEMU debug port, use -DQEMU_DEBUG, or -DTKEY_DEBUG if you
@@ -24,7 +28,8 @@ CFLAGS = -target riscv32-unknown-none-elf -march=rv32iczmmul -mabi=ilp32 -mcmode
    -static -std=gnu99 -O2 -ffast-math -fno-common -fno-builtin-printf \
    -fno-builtin-putchar -nostdlib -mno-relax -flto -g \
    -Wall -Werror=implicit-function-declaration \
-   -I $(INCLUDE) -I $(LIBDIR) #-DTKEY_DEBUG #-DQEMU_DEBUG
+   -DMLD_CONFIG_FILE=\"mldsa_config.h\" \
+   $(INCLUDES) -I $(LIBDIR) #-DTKEY_DEBUG #-DQEMU_DEBUG
 
 ifneq ($(TKEY_SIGNER_APP_NO_TOUCH),)
 CFLAGS := $(CFLAGS) -DTKEY_SIGNER_APP_NO_TOUCH
@@ -66,11 +71,11 @@ CLANG_TIDY = clang-tidy
 check:
 	$(CLANG_TIDY) -header-filter=.* -checks=cert-* signer/*.[ch] -- $(CFLAGS)
 
-# Simple ed25519 signer app
-SIGNEROBJS=signer/main.o signer/app_proto.o
+# Simple mldsa signer app
+SIGNEROBJS=signer/main.o signer/app_proto.o signer/rng.o signer/blake2s/blake2s.o
 signer/app.elf: $(SIGNEROBJS)
-	$(CC) $(CFLAGS) $(SIGNEROBJS) $(LDFLAGS) -L $(LIBDIR)/monocypher -lmonocypher -I $(LIBDIR) -o $@
-$(SIGNEROBJS): $(INCLUDE)/tkey/tk1_mem.h signer/app_proto.h
+	$(CC) $(CFLAGS) $(SIGNEROBJS) $(LDFLAGS) -L $(LIBDIR)/monocypher -lmonocypher -I $(LIBDIR) $(INCLUDES) -o $@
+$(SIGNEROBJS): $(LIBDIR)/include/tkey/tk1_mem.h signer/app_proto.h signer/rng.h signer/blake2s/blake2s.h
 
 .PHONY: clean
 clean:
