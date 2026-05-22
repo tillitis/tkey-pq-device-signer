@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Tillitis AB <tillitis.se>
 // SPDX-License-Identifier: BSD-2-Clause
 
+#include <mldsa_native.h>
 #include <monocypher/monocypher-ed25519.h>
 #include <stdbool.h>
 #include <tkey/assert.h>
@@ -43,9 +44,9 @@ enum state {
 
 // Context for the loading of a message
 struct context {
-	uint8_t secret_key[64]; // Private key. Keep this here below
+	uint8_t secret_key[MLDSA44_SECRETKEYBYTES]; // Private key. Keep this here below
 				// message in memory.
-	uint8_t pubkey[32];
+	uint8_t pubkey[MLDSA44_PUBLICKEYBYTES];
 	uint8_t message[MAX_SIGN_SIZE];
 	uint32_t left; // Bytes left to receive
 	uint32_t message_size;
