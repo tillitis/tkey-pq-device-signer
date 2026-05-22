@@ -371,16 +371,17 @@
  *              no-op.
  *
  *****************************************************************************/
-/* #define MLD_CONFIG_CUSTOM_ZEROIZE
-   #if !defined(__ASSEMBLER__)
-   #include <stdint.h>
-   #include "src/src.h"
-   static MLD_INLINE void mld_zeroize(void *ptr, size_t len)
-   {
-       ... your implementation ...
-   }
-   #endif
-*/
+#define MLD_CONFIG_CUSTOM_ZEROIZE
+#if !defined(__ASSEMBLER__)
+#include <tkey/lib.h>
+
+static inline void mld_zeroize(void *ptr, size_t len)
+{
+    memset(ptr, 0, len);
+    __asm__ __volatile__("" : : "r"(ptr) : "memory");
+}
+#endif
+
 
 /******************************************************************************
  * Name:        MLD_CONFIG_CUSTOM_RANDOMBYTES
@@ -398,16 +399,17 @@
  *
  *****************************************************************************/
 #define MLD_CONFIG_CUSTOM_RANDOMBYTES
-   #if !defined(__ASSEMBLER__)
-   #include <stdint.h>
-   #include <rng.h>
+#if !defined(__ASSEMBLER__)
+#include <stddef.h>
+#include <stdint.h>
+#include <rng.h>
 
-   extern rng_ctx * mld_rng_ctx;
+extern rng_ctx * mld_rng_ctx;
 
-   static MLD_INLINE int mld_randombytes(uint8_t *out, size_t outlen) {
-       rng_get(out, mld_rng_ctx, outlen);
-       return 0;
-   }
+static inline int mld_randombytes(uint8_t *out, size_t outlen) {
+    rng_get(out, mld_rng_ctx, outlen);
+    return 0;
+}
 #endif
 
 /******************************************************************************
@@ -499,16 +501,9 @@
  *              void *mld_memcpy(void *dest, const void *src, size_t n)
  *
  *****************************************************************************/
-/*#define MLD_CONFIG_CUSTOM_MEMCPY
-   #if !defined(__ASSEMBLER__)
-   #include <stdint.h>
-   #include "src/src.h"
-   static MLD_INLINE void *mld_memcpy(void *dest, const void *src, size_t n)
-   {
-       ... your implementation ...
-   }
-   #endif
-*/
+#define MLD_CONFIG_CUSTOM_MEMCPY
+#define mld_memcpy memcpy
+
 
 /******************************************************************************
  * Name:        MLD_CONFIG_CUSTOM_MEMSET
@@ -522,16 +517,9 @@
  *              void *mld_memset(void *s, int c, size_t n)
  *
  *****************************************************************************/
-/* #define MLD_CONFIG_CUSTOM_MEMSET
-   #if !defined(__ASSEMBLER__)
-   #include <stdint.h>
-   #include "src/src.h"
-   static MLD_INLINE void *mld_memset(void *s, int c, size_t n)
-   {
-       ... your implementation ...
-   }
-   #endif
-*/
+#define MLD_CONFIG_CUSTOM_MEMSET
+#define mld_memset memset
+
 
 /******************************************************************************
  * Name:        MLD_CONFIG_INTERNAL_API_QUALIFIER
