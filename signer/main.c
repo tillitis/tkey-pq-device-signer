@@ -314,7 +314,8 @@ static enum state signing_commands(enum state state, struct context *ctx,
 				   struct packet pkt)
 {
 	uint8_t rsp[CMDLEN_MAXBYTES] = {0}; // Response
-	uint8_t signature[64] = {0};
+	uint8_t signature[MLDSA44_BYTES] = {0};
+	size_t siglen = 0;
 	bool touched = false;
 
 	switch (pkt.cmd[0]) {
@@ -340,13 +341,33 @@ static enum state signing_commands(enum state state, struct context *ctx,
 		debug_puts("Touched, now let's sign\n");
 
 		// All loaded, device touched, let's sign the message
-		crypto_ed25519_sign(signature, ctx->secret_key, ctx->message,
-				    ctx->message_size);
+		if(crypto_sign_signature(signature, &siglen, ctx->message, ctx->message_size,
+				 NULL, 0, ctx->secret_key) != 0) {
+			debug_puts("Signing failed!\n");
+			rsp[0] = STATUS_BAD;
+			appreply(pkt.hdr, RSP_GET_SIG, rsp);
+
+			state = STATE_STARTED;
+			break;
+		}
 
 		debug_puts("Sending signature!\n");
-		memcpy_s(rsp + 1, CMDLEN_MAXBYTES, signature,
-			 sizeof(signature));
-		appreply(pkt.hdr, RSP_GET_SIG, rsp);
+		{
+			int sig_offset = 0;
+			int sig_remaining = (int)siglen;
+
+			while (sig_remaining > 0) {
+				int nbytes = sig_remaining > CMDLEN_MAXBYTES - 2
+						 ? CMDLEN_MAXBYTES - 2 : sig_remaining;
+				memset(rsp, 0, sizeof(rsp));
+				rsp[0] = STATUS_OK;
+				memcpy_s(rsp + 1, CMDLEN_MAXBYTES - 1,
+					 signature + sig_offset, nbytes);
+				appreply(pkt.hdr, RSP_GET_SIG, rsp);
+				sig_offset += nbytes;
+				sig_remaining -= nbytes;
+			}
+		}
 
 		// Forget signature and most of context
 		crypto_wipe(signature, sizeof(signature));
