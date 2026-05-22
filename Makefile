@@ -72,10 +72,13 @@ check:
 	$(CLANG_TIDY) -header-filter=.* -checks=cert-* signer/*.[ch] -- $(CFLAGS)
 
 # Simple mldsa signer app
-SIGNEROBJS=signer/main.o signer/app_proto.o signer/rng.o signer/blake2s/blake2s.o
+SIGNEROBJS=signer/main.o signer/app_proto.o signer/rng.o signer/blake2s/blake2s.o signer/mldsa.o
 signer/app.elf: $(SIGNEROBJS)
 	$(CC) $(CFLAGS) $(SIGNEROBJS) $(LDFLAGS) -L $(LIBDIR)/monocypher -lmonocypher -I $(LIBDIR) $(INCLUDES) -o $@
 $(SIGNEROBJS): $(LIBDIR)/include/tkey/tk1_mem.h signer/app_proto.h signer/rng.h signer/blake2s/blake2s.h
+
+signer/mldsa.o: $(P)/mldsa-native/mldsa/mldsa_native.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
