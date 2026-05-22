@@ -159,7 +159,10 @@ static enum state started_commands(enum state state, struct context *ctx,
 		break;
 	}
 
-	case CMD_GET_PUBKEY:
+	case CMD_GET_PUBKEY: {
+		int pk_offset = 0;
+		int pk_remaining = MLDSA44_PUBLICKEYBYTES;
+
 		debug_puts("CMD_GET_PUBKEY\n");
 		if (pkt.hdr.len != 1) {
 			// Bad length
@@ -167,11 +170,19 @@ static enum state started_commands(enum state state, struct context *ctx,
 			break;
 		}
 
-		memcpy_s(rsp, CMDLEN_MAXBYTES, ctx->pubkey,
-			 sizeof(ctx->pubkey));
-		appreply(pkt.hdr, RSP_GET_PUBKEY, rsp);
+		while (pk_remaining > 0) {
+			int nbytes = pk_remaining > CMDLEN_MAXBYTES - 1
+					 ? CMDLEN_MAXBYTES - 1 : pk_remaining;
+			memset(rsp, 0, sizeof(rsp));
+			memcpy_s(rsp, CMDLEN_MAXBYTES,
+				 ctx->pubkey + pk_offset, nbytes);
+			appreply(pkt.hdr, RSP_GET_PUBKEY, rsp);
+			pk_offset += nbytes;
+			pk_remaining -= nbytes;
+		}
 		// state unchanged
 		break;
+	}
 
 	case CMD_SET_SIZE: {
 		uint32_t local_message_size = 0;
