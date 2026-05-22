@@ -468,7 +468,10 @@ int main(void)
 #endif
 
 	// Generate a public key from CDI
-	crypto_ed25519_key_pair(ctx.secret_key, ctx.pubkey, (uint8_t *)cdi);
+	if(MLD_API_NAMESPACE(keypair_internal)(ctx.pubkey, ctx.secret_key, (uint8_t *)cdi) != 0) {
+		debug_puts("Key generation failed!\n");
+		assert(1 == 2);
+	}
 
 	for (;;) {
 		debug_puts("parser state: ");
