@@ -322,18 +322,18 @@ void blake2s_final(blake2s_ctx *ctx, void *out)
 //------------------------------------------------------------------
 // Convenience function for all-in-one computation.
 //------------------------------------------------------------------
-// int blake2s(void *out, size_t outlen, const void *key, size_t keylen,
-// 	      const void *in, size_t inlen, blake2s_ctx *ctx)
-// {
-// 	if (blake2s_init(ctx, outlen, key, keylen))
-// 		return -1;
+int blake2s(void *out, size_t outlen, const void *key, size_t keylen,
+	      const void *in, size_t inlen, blake2s_ctx *ctx)
+{
+	if (blake2s_init(ctx, outlen, key, keylen))
+		return -1;
 
-// 	blake2s_update(ctx, in, inlen);
+	blake2s_update(ctx, in, inlen);
 
-// 	blake2s_final(ctx, out);
+	blake2s_final(ctx, out);
 
-// 	return 0;
-// }
+	return 0;
+}
 
 //======================================================================
 //======================================================================

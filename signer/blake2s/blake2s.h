@@ -32,9 +32,9 @@ void blake2s_final(blake2s_ctx *ctx, void *out);
 
 // Available from firmware.
 // All-in-one convenience function.
-// int blake2s(void *out, size_t outlen,	    // return buffer for digest
-// 	    const void *key, size_t keylen, // optional secret key
-// 	    const void *in, size_t inlen,   // data to be hashed
-// 	    blake2s_ctx *ctx);
+int blake2s(void *out, size_t outlen,	    // return buffer for digest
+	    const void *key, size_t keylen, // optional secret key
+	    const void *in, size_t inlen,   // data to be hashed
+	    blake2s_ctx *ctx);
 
 #endif
