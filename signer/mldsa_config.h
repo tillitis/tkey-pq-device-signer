@@ -404,12 +404,10 @@ static inline void mld_zeroize(void *ptr, size_t len)
 #include <stdint.h>
 #include <rng.h>
 
-extern rng_ctx * mld_rng_ctx;
-
 static inline int mld_randombytes(uint8_t *out, size_t outlen) {
-    rng_get(out, mld_rng_ctx, outlen);
-    return 0;
+    return rng_get(out, outlen);
 }
+
 #endif
 
 /******************************************************************************

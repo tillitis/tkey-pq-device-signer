@@ -475,18 +475,14 @@ static int read_command(struct frame_header *hdr, uint8_t *cmd)
 	return 0;
 }
 
-rng_ctx * mld_rng_ctx; // Global RNG context used by mldsa-native
-
 int main(void)
 {
 	struct context ctx = {0};
 	enum state state = STATE_STARTED;
 	struct packet pkt = {0};
 	
-	// Initialize RNG and set global pointer for mldsa-native
-	rng_ctx rng_ctx;
-	rng_init(&rng_ctx);
-	mld_rng_ctx = &rng_ctx;
+	// Initialize RNG
+	rng_init();
 
 	// Use Execution Monitor on RAM after app
 	*cpu_mon_first = *app_addr + *app_size;
