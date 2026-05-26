@@ -32,7 +32,7 @@ static volatile uint32_t *ver		= (volatile uint32_t *) TK1_MMIO_TK1_VERSION;
 #define MAX_SIGN_SIZE 4096
 
 const uint8_t app_name0[4] = "tk1 ";
-const uint8_t app_name1[4] = "sign";
+const uint8_t app_name1[4] = "pqsn";
 const uint32_t app_version = 0x00000003;
 
 enum state {
