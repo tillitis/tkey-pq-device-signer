@@ -401,7 +401,7 @@ static int read_command(struct frame_header *hdr, uint8_t *cmd)
 
 	if (*ver >= CASTORVERSION) {
 		if (readselect(IO_CDC, &endpoint, &available) < 0) {
-			debug_puts("readselect errror");
+			debug_puts("readselect error");
 			return -1;
 		}
 
@@ -422,7 +422,7 @@ static int read_command(struct frame_header *hdr, uint8_t *cmd)
 	if (*ver >= CASTORVERSION) {
 		for (uint8_t n = 0; n < hdr->len;) {
 			if (readselect(IO_CDC, &endpoint, &available) < 0) {
-				debug_puts("readselect errror");
+				debug_puts("readselect error");
 				return -1;
 			}
 
