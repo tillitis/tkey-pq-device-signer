@@ -1,25 +1,23 @@
 [![ci](https://github.com/tillitis/tkey-device-signer/actions/workflows/ci.yaml/badge.svg?branch=main&event=push)](https://github.com/tillitis/tkey-device-signer/actions/workflows/ci.yaml)
 
-# Tillitis TKey Signer
+# Tillitis TKey PQ-Signer
 
-The TKey `signer` device application is an ed25519 signing tool. It
+The TKey `pqsigner` device application is an ml-dsa-44 signing tool. It
 can sign messages up to 4 kByte. It is, for instance, used by the
-[tkey-ssh-agent](https://github.com/tillitis/tkey-ssh-agent) for SSH
-authentication and by
-[tkey-sign](https://github.com/tillitis/tkey-sign-cli) for doing
+[tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) for doing
 digital signatures of files.
 
 See [Release notes](RELEASE.md).
 
 ## Client Go package
 
-We provide a Go package to use with `signer`:
+We provide a Go package to use with `pqsigner`:
 
-- https://github.com/tillitis/tkeysign [![Go Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkeysign)
+- https://github.com/tillitis/tkeysign-pq [![Go Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkeysign-pq)
 
 ## Signer application protocol
 
-`signer` has a simple application protocol on top of the [TKey Framing
+`pqsigner` has a simple application protocol on top of the [TKey Framing
 Protocol](https://dev.tillitis.se/protocol/#framing-protocol).
 
 The protocol state machine handling this protocol is documented in
@@ -38,10 +36,10 @@ The protocol has the following requests and responses:
 
 | *response*              | *FP length* | *code* | *data*                             |
 |-------------------------|-------------|--------|------------------------------------|
-| `RSP_GET_PUBKEY`        | 128 B       | 0x02   | 32 byte ed25519 public key         |
+| `RSP_GET_PUBKEY`        | 128 B       | 0x02   | 1312 byte mldsa44 public key       |
 | `RSP_SET_SIZE`          | 4 B         | 0x04   | 1 byte status                      |
 | `RSP_LOAD_DATA`         | 4 B         | 0x06   | 1 byte status                      |
-| `RSP_GET_SIG`           | 128 B       | 0x08   | 64 byte signature                  |
+| `RSP_GET_SIG`           | 128 B       | 0x08   | 2420 byte signature                |
 | `RSP_GET_NAMEVERSION`   | 32 B        | 0x0a   | 2 * 4 byte name, version 32 bit LE |
 | `RSP_GET_FIRMWARE_HASH` | 128 B       | 0x0c   | 1 byte status + 64 bytes digest    |
 
@@ -53,9 +51,9 @@ The protocol has the following requests and responses:
 It identifies itself with:
 
 - `name0`: "tk1  "
-- `name1`: "sign"
+- `name1`: "pqsn"
 
-Please note that `signer` also replies with a `NOK` Framing Protocol
+Please note that `pqsigner` also replies with a `NOK` Framing Protocol
 response status if the endpoint field in the FP header is meant for
 the firmware (endpoint = `DST_FW`). This is recommended for
 well-behaved device applications so the client side can probe for the
@@ -65,10 +63,10 @@ Typical use by a client application:
 
 1. Probe for firmware by sending firmware's `GET_NAME_VERSION` with FP
    header endpoint = `DST_FW`.
-2. If firmware is found, load `signer`.
+2. If firmware is found, load `pqsigner`.
 3. Upon receiving the device app digest back from firmware, switch to
-   start talking the `signer` protocol above.
-4. Send `CMD_GET_PUBKEY` to receive the `signer`'s public key. If the
+   start talking the `pqsigner` protocol above.
+4. Send `CMD_GET_PUBKEY` to receive the `pqsigner`'s public key. If the
    public key is already stored, check against it so it's the expected
    key.
 5. Send `CMD_SET_SIZE` to set the size of the message to sign.
