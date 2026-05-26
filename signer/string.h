@@ -5,6 +5,7 @@
 #define STRING_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* Provided by tkey-libs libcommon.a */
 void *memcpy(void *dest, const void *src, size_t n);
@@ -18,7 +19,15 @@ static inline void *memmove(void *dest, const void *src, size_t n)
 
 static inline int memcmp(const void *s1, const void *s2, size_t n)
 {
-    return __builtin_memcmp(s1, s2, n);
+    const uint8_t *pa = (const uint8_t *)s1;
+    const uint8_t *pb = (const uint8_t *)s2;
+    uint8_t diff = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        diff |= pa[i] ^ pb[i];
+    }
+
+    return diff == 0;
 }
 
 #endif
