@@ -341,7 +341,7 @@ static enum state signing_commands(enum state state, struct context *ctx,
 		debug_puts("Touched, now let's sign\n");
 
 		// All loaded, device touched, let's sign the message
-		if(crypto_sign_signature(signature, &siglen, ctx->message, ctx->message_size,
+		if(mldsa_signature(signature, &siglen, ctx->message, ctx->message_size,
 				 NULL, 0, ctx->secret_key) != 0) {
 			debug_puts("Signing failed!\n");
 			rsp[0] = STATUS_BAD;
@@ -496,9 +496,9 @@ int main(void)
 #endif
 
 	// Generate a public key from CDI
-	if(MLD_API_NAMESPACE(keypair_internal)(ctx.pubkey, ctx.secret_key, (uint8_t *)cdi) != 0) {
+	if(mldsa_keypair_internal(ctx.pubkey, ctx.secret_key, (uint8_t *)cdi) != 0) {
 		debug_puts("Key generation failed!\n");
-		assert(1 == 2);
+		state = STATE_FAILED;
 	}
 
 	for (;;) {
