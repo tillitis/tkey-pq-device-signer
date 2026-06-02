@@ -72,7 +72,7 @@
  *
  *****************************************************************************/
 #if !defined(MLD_CONFIG_NAMESPACE_PREFIX)
-#define MLD_CONFIG_NAMESPACE_PREFIX MLD_DEFAULT_NAMESPACE_PREFIX
+#define MLD_CONFIG_NAMESPACE_PREFIX mldsa
 #endif
 
 /******************************************************************************
@@ -141,7 +141,7 @@
  *              naming does not disambiguate between the parameter sets.
  *
  *****************************************************************************/
-/* #define MLD_CONFIG_NO_SUPERCOP */
+#define MLD_CONFIG_NO_SUPERCOP
 
 /******************************************************************************
  * Name:        MLD_CONFIG_CONSTANTS_ONLY
@@ -377,8 +377,7 @@
 
 static inline void mld_zeroize(void *ptr, size_t len)
 {
-    memset(ptr, 0, len);
-    __asm__ __volatile__("" : : "r"(ptr) : "memory");
+    secure_wipe(ptr, len);
 }
 #endif
 
