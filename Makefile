@@ -29,7 +29,11 @@ CFLAGS = -target riscv32-unknown-none-elf -march=rv32iczmmul -mabi=ilp32 -mcmode
    -fno-builtin-putchar -nostdlib -mno-relax -flto -g \
    -Wall -Werror=implicit-function-declaration \
    -DMLD_CONFIG_FILE=\"mldsa_config.h\" \
-   $(INCLUDES) -I $(LIBDIR) #-DTKEY_DEBUG #-DQEMU_DEBUG
+   $(INCLUDES) -I $(LIBDIR) #-DQEMU_DEBUG
+
+ifneq ($(TKEY_DEBUG),)
+CFLAGS := $(CFLAGS) -DTKEY_DEBUG
+endif
 
 ifneq ($(TKEY_SIGNER_APP_NO_TOUCH),)
 CFLAGS := $(CFLAGS) -DTKEY_SIGNER_APP_NO_TOUCH
@@ -97,7 +101,7 @@ checkfmt:
 
 .PHONY: podman
 podman:
-	podman run --arch=amd64 --rm --mount type=bind,source=$(CURDIR),target=/src --mount type=bind,source=$(LIBDIR),target=/tkey-libs -w /src -it $(IMAGE) make -j
+	podman run --arch=amd64 --rm --mount type=bind,source=$(CURDIR),target=/src --mount type=bind,source=$(LIBDIR),target=/tkey-libs -w /src -it $(IMAGE) make -j $(if $(TKEY_DEBUG),TKEY_DEBUG=$(TKEY_DEBUG)) $(if $(TKEY_SIGNER_APP_NO_TOUCH),TKEY_SIGNER_APP_NO_TOUCH=$(TKEY_SIGNER_APP_NO_TOUCH))
 
 .PHONY: test-hw-mldsa
 test-hw-mldsa:

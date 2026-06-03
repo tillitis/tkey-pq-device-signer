@@ -25,7 +25,32 @@ static volatile uint32_t *cpu_mon_last  = (volatile uint32_t *) TK1_MMIO_TK1_CPU
 static volatile uint32_t *app_addr      = (volatile uint32_t *) TK1_MMIO_TK1_APP_ADDR;
 static volatile uint32_t *app_size      = (volatile uint32_t *) TK1_MMIO_TK1_APP_SIZE;
 static volatile uint32_t *ver		= (volatile uint32_t *) TK1_MMIO_TK1_VERSION;
+#ifdef TKEY_DEBUG
+static volatile uint32_t *hw_timer           = (volatile uint32_t *)TK1_MMIO_TIMER_TIMER;
+static volatile uint32_t *hw_timer_prescaler = (volatile uint32_t *)TK1_MMIO_TIMER_PRESCALER;
+static volatile uint32_t *hw_timer_ctrl      = (volatile uint32_t *)TK1_MMIO_TIMER_CTRL;
+#endif
 // clang-format on
+
+#ifdef TKEY_DEBUG
+#define CPUFREQ          18000000
+#define TIMER_MS_PRESCALER (CPUFREQ / 1000)
+#define TIMER_INIT_VAL   0x7FFFFFFFU
+
+static void timer_start(void)
+{
+	*hw_timer_prescaler = TIMER_MS_PRESCALER;
+	*hw_timer = TIMER_INIT_VAL;
+	*hw_timer_ctrl = (1 << TK1_MMIO_TIMER_CTRL_START_BIT);
+}
+
+static uint32_t timer_elapsed_ms(void)
+{
+	uint32_t remaining = *hw_timer;
+	*hw_timer_ctrl = (1 << TK1_MMIO_TIMER_CTRL_STOP_BIT);
+	return TIMER_INIT_VAL - remaining;
+}
+#endif
 
 // Touch timeout in seconds
 #define TOUCH_TIMEOUT 30
@@ -47,7 +72,7 @@ struct context {
 	uint8_t secret_key[MLDSA44_SECRETKEYBYTES]; // Private key. Keep this here below
 				// message in memory.
 	uint8_t pubkey[MLDSA44_PUBLICKEYBYTES];
-	uint8_t message[MAX_SIGN_SIZE];
+	uint8_t message[MLDSA44_CRHBYTES]; // mu: pre-computed 64-byte message representative
 	uint32_t left; // Bytes left to receive
 	uint32_t message_size;
 	uint16_t msg_idx; // Where we are currently loading a message
@@ -70,7 +95,7 @@ static void wipe_context(struct context *ctx);
 
 static void wipe_context(struct context *ctx)
 {
-	crypto_wipe(ctx->message, MAX_SIGN_SIZE);
+	crypto_wipe(ctx->message, MLDSA44_CRHBYTES);
 	ctx->left = 0;
 	ctx->message_size = 0;
 	ctx->msg_idx = 0;
@@ -201,9 +226,8 @@ static enum state started_commands(enum state state, struct context *ctx,
 		local_message_size = pkt.cmd[1] + (pkt.cmd[2] << 8) +
 				     (pkt.cmd[3] << 16) + (pkt.cmd[4] << 24);
 
-		if (local_message_size == 0 ||
-		    local_message_size > MAX_SIGN_SIZE) {
-			debug_puts("Message size not within range!\n");
+		if (local_message_size != MLDSA44_CRHBYTES) {
+			debug_puts("mu size must be exactly MLDSA44_CRHBYTES (64)\n");
 			rsp[0] = STATUS_BAD;
 			appreply(pkt.hdr, RSP_SET_SIZE, rsp);
 
@@ -270,7 +294,7 @@ static enum state loading_commands(enum state state, struct context *ctx,
 		}
 
 		memcpy_s(&ctx->message[ctx->msg_idx],
-			 MAX_SIGN_SIZE - ctx->msg_idx, pkt.cmd + 1, nbytes);
+			 MLDSA44_CRHBYTES - ctx->msg_idx, pkt.cmd + 1, nbytes);
 
 		ctx->msg_idx += nbytes;
 		ctx->left -= nbytes;
@@ -340,9 +364,12 @@ static enum state signing_commands(enum state state, struct context *ctx,
 #endif
 		debug_puts("Touched, now let's sign\n");
 
-		// All loaded, device touched, let's sign the message
-		if(mldsa_signature(signature, &siglen, ctx->message, ctx->message_size,
-				 NULL, 0, ctx->secret_key) != 0) {
+		// All loaded, device touched, let's sign the mu
+#ifdef TKEY_DEBUG
+		timer_start();
+#endif
+		if(mldsa_signature_extmu(signature, &siglen, ctx->message,
+				 ctx->secret_key) != 0) {
 			debug_puts("Signing failed!\n");
 			rsp[0] = STATUS_BAD;
 			appreply(pkt.hdr, RSP_GET_SIG, rsp);
@@ -351,6 +378,14 @@ static enum state signing_commands(enum state state, struct context *ctx,
 			break;
 		}
 
+#ifdef TKEY_DEBUG
+		{
+			uint32_t elapsed = timer_elapsed_ms();
+			debug_puts("Sign time (ms): ");
+			debug_putinthex(elapsed);
+			debug_lf();
+		}
+#endif
 		debug_puts("Sending signature!\n");
 		{
 			int sig_offset = 0;
