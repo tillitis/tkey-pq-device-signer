@@ -98,3 +98,11 @@ checkfmt:
 .PHONY: podman
 podman:
 	podman run --arch=amd64 --rm --mount type=bind,source=$(CURDIR),target=/src --mount type=bind,source=$(LIBDIR),target=/tkey-libs -w /src -it $(IMAGE) make -j
+
+.PHONY: test-hw-mldsa
+test-hw-mldsa:
+	bash tests/run_mldsa_hw_local.sh
+
+.PHONY: test-hw-mldsa-protocol-negative
+test-hw-mldsa-protocol-negative:
+	bash tests/run_mldsa_hw_protocol_negative.sh
