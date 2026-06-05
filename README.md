@@ -7,11 +7,11 @@ can sign messages up to 4 kByte. It is, for instance, used by the
 [tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) for doing
 digital signatures of files.
 
-The `pqsigner` is using signing by the use of eternal MU instead of computing
+The `pqsigner` is using signing by the use of external MU instead of computing
 it on the tkey to make it possible to sign larger files, use less RAM and to
 optimize the signing speed while still using MLDSA-pure instead of Hash-MLDSA
 for security considerations. The signing is done with the default "hedged"-signing
-over "deterministic"-signing and implements a good DRBG to achive this.
+over "deterministic"-signing and implements a good DRBG to achieve this.
 
 The library mldsa-native is used to add mldsa support and it has tests according to
 NIST, KAT and ACVP test framework that can be used to test the algorithm.
@@ -129,7 +129,7 @@ An easy way to build is to use the provided scripts:
 - `build.sh` for native tools.
 - `build-podman.sh` for use with Podman.
 
-These scripts automatilly clone the [tkey-libs device
+These scripts automatically clone the [tkey-libs device
 libraries](https://github.com/tillitis/tkey-libs) in a directory next
 to this one.
 
