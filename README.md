@@ -13,6 +13,12 @@ optimize the signing speed while still using MLDSA-pure instead of Hash-MLDSA
 for security considerations. The signing is done with the default "hedged"-signing
 over "deterministic"-signing and implements a good DRBG to achive this.
 
+The library mldsa-native is used to add mldsa support and it has tests according to
+NIST, KAT and ACVP test framework that can be used to test the algorithm.
+
+Tests to run and stresstest the mldsa signing on protocol level and to use to test
+a tkey is also added.
+
 See [MLDSA Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html) for more information about hedged vs deterministic signing and external MU computation.
 
 See [Release notes](RELEASE.md).
@@ -209,14 +215,32 @@ derived private key and identity will change.
 ## Running
 
 If you just want to sign a file or experiment with the signer, use the
-[tkey-sign](https://github.com/tillitis/tkey-sign-cli) command which
+[tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) command which
 you can also use as an example on how to load and run the signer
 device app.
-
-[tkey-ssh-agent](https://github.com/tillitis/tillitis-key1-apps) also
-uses this signer app.
 
 Please see the [Developer Handbook](https://dev.tillitis.se/) for [how
 to run with QEMU](https://dev.tillitis.se/tools/#qemu-emulator) or
 [how to run apps on a
 TKey](https://dev.tillitis.se/devapp/#running-tkey-apps).
+
+## Testing
+
+The mldsa-native library used for mldsa implements a testing framework for mldsa.
+
+To run KAT tests and ACVP tests
+
+```
+$ cd mldsa-native
+$ make kat
+$ make acvp
+```
+
+Tests for the tkey has also been implemented which tests tampering of signature
+and tkey functionality of mldsa. It will require that `tkey-sign-pq` is installed
+or can be set by the `--bin` argument of the scripts. 
+
+```
+$ make test-hw-mldsa
+$ make test-hw-mldsa-protocol-negative
+```
