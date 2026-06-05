@@ -7,6 +7,14 @@ can sign messages up to 4 kByte. It is, for instance, used by the
 [tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) for doing
 digital signatures of files.
 
+The `pqsigner` is using signing by the use of eternal MU instead of computing
+it on the tkey to make it possible to sign larger files, use less RAM and to
+optimize the signing speed while still using MLDSA-pure instead of Hash-MLDSA
+for security considerations. The signing is done with the default "hedged"-signing
+over "deterministic"-signing and implements a good DRBG to achive this.
+
+See [MLDSA Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html) for more information about hedged vs deterministic signing and external MU computation.
+
 See [Release notes](RELEASE.md).
 
 ## Client Go package
