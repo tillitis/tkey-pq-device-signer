@@ -84,10 +84,6 @@ static void generate_seed(uint32_t *input, uint32_t *seed)
 	memcpy((uint8_t *)seed, seed1, sizeof(seed1)); // store 256 bits
 	memcpy((uint8_t *)seed + 32, seed2,
 	       sizeof(seed2) - 8); // store 192 bits
-	// secure_wipe(seed1, sizeof(seed1) * 4);
-	// secure_wipe(seed2, sizeof(seed2) * 4);
-	// secure_wipe(seed1_input, sizeof(seed1_input) * 4);
-	// secure_wipe(seed2_input, sizeof(seed2_input) * 4);
 }
 
 // Input is new data that are supposed to update the state, input_len (in words)
