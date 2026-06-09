@@ -14,7 +14,6 @@
 
 #include "app_proto.h"
 #include "platform.h"
-#include "blake2s/blake2s.h"
 #include "rng.h"
 
 // clang-format off
