@@ -19,15 +19,16 @@ static inline void *memmove(void *dest, const void *src, size_t n)
 
 static inline int memcmp(const void *s1, const void *s2, size_t n)
 {
-    const uint8_t *pa = (const uint8_t *)s1;
-    const uint8_t *pb = (const uint8_t *)s2;
-    uint8_t diff = 0;
+    const unsigned char *p1 = s1;
+    const unsigned char *p2 = s2;
 
     for (size_t i = 0; i < n; i++) {
-        diff |= pa[i] ^ pb[i];
+        if (p1[i] != p2[i]) {
+            return (p1[i] > p2[i]) ? 1 : -1;
+        }
     }
-
-    return diff == 0;
+    
+    return 0;
 }
 
 #endif
