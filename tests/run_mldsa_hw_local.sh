@@ -237,10 +237,22 @@ tamper_signature_file() {
   local raw_file="${workdir}/sig.raw"
   local b64_file="${workdir}/sig.b64"
   local comment
+  local first flipped
 
   comment="$(sed -n '1p' "${sig_file}")"
   sed -n '2p' "${sig_file}" | base64 -d > "${raw_file}"
-  flip_first_byte_in_file "${raw_file}"
+
+  # The raw binary layout is Alg[2] + KeyNum[8] + Sig[...].
+  # verifySignature only checks the Sig field, so we must flip a byte
+  # inside Sig (offset 10) rather than in the ignored header.
+  local sig_offset=10
+  first="$(od -An -t u1 -N1 -j "${sig_offset}" "${raw_file}" | tr -d ' ')"
+  if [[ -z "${first}" ]]; then
+    fail "cannot flip byte in signature file: ${raw_file}"
+  fi
+  flipped=$(( first ^ 0xFF ))
+  printf "\\$(printf '%03o' "${flipped}")" | dd of="${raw_file}" bs=1 seek="${sig_offset}" conv=notrunc status=none
+
   base64 -w0 "${raw_file}" > "${b64_file}"
 
   {
