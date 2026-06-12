@@ -2,12 +2,12 @@
 
 # Tillitis TKey PQ-Signer
 
-The TKey `pqsigner` device application is an ml-dsa-44 signing tool. It
+The TKey `tkey-pq-device-signer` device application is an ml-dsa-44 signing tool. It
 can sign messages up to 4 kByte. It is, for instance, used by the
-[tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) for doing
+[tkey-pq-sign-cli](https://github.com/tillitis/tkey-pq-sign-cli) for doing
 digital signatures of files.
 
-The `pqsigner` is using signing by the use of external MU instead of computing
+The `tkey-pq-device-signer` is using signing by the use of external MU instead of computing
 it on the tkey to make it possible to sign larger files, use less RAM and to
 optimize the signing speed while still using ML-DSA-pure instead of Hash-ML-DSA
 for security considerations. The signing is done with the default "hedged"-signing
@@ -25,13 +25,13 @@ See [Release notes](RELEASE.md).
 
 ## Client Go package
 
-We provide a Go package to use with `pqsigner`:
+We provide a Go package to use with `tkey-pq-device-signer`:
 
-- https://github.com/tillitis/tkeysign-pq [![Go Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkeysign-pq)
+- https://github.com/tillitis/tkey-pq-device-sign [![Go Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkey-pq-device-sign)
 
 ## Signer application protocol
 
-`pqsigner` has a simple application protocol on top of the [TKey Framing
+`tkey-pq-device-signer` has a simple application protocol on top of the [TKey Framing
 Protocol](https://dev.tillitis.se/protocol/#framing-protocol).
 
 The protocol state machine handling this protocol is documented in
@@ -67,7 +67,7 @@ It identifies itself with:
 - `name0`: "tk1  "
 - `name1`: "pqsn"
 
-Please note that `pqsigner` also replies with a `NOK` Framing Protocol
+Please note that `tkey-pq-device-signer` also replies with a `NOK` Framing Protocol
 response status if the endpoint field in the FP header is meant for
 the firmware (endpoint = `DST_FW`). This is recommended for
 well-behaved device applications so the client side can probe for the
@@ -77,10 +77,10 @@ Typical use by a client application:
 
 1. Probe for firmware by sending firmware's `GET_NAME_VERSION` with FP
    header endpoint = `DST_FW`.
-2. If firmware is found, load `pqsigner`.
+2. If firmware is found, load `tkey-pq-device-signer`.
 3. Upon receiving the device app digest back from firmware, switch to
-   start talking the `pqsigner` protocol above.
-4. Send `CMD_GET_PUBKEY` to receive the `pqsigner`'s public key. If the
+   start talking the `tkey-pq-device-signer` protocol above.
+4. Send `CMD_GET_PUBKEY` to receive the `tkey-pq-device-signer`'s public key. If the
    public key is already stored, check against it so it's the expected
    key.
 5. Send `CMD_SET_SIZE` to set the size of the message to sign.
@@ -215,7 +215,7 @@ derived private key and identity will change.
 ## Running
 
 If you just want to sign a file or experiment with the signer, use the
-[tkey-sign-pq](https://github.com/tillitis/tkey-sign-cli-pq) command which
+[tkey-pq-sign-cli](https://github.com/tillitis/tkey-sign-cli-pq) command which
 you can also use as an example on how to load and run the signer
 device app.
 
@@ -237,7 +237,7 @@ $ make acvp
 ```
 
 Tests for the tkey has also been implemented which tests tampering of signature
-and tkey functionality of mldsa. It will require that `tkey-sign-pq` is installed
+and tkey functionality of mldsa. It will require that `tkey-pq-sign-cli` is installed
 or can be set by the `--bin` argument of the scripts. 
 
 ```
