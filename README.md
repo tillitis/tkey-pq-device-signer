@@ -9,7 +9,7 @@ digital signatures of files.
 
 The `pqsigner` is using signing by the use of external MU instead of computing
 it on the tkey to make it possible to sign larger files, use less RAM and to
-optimize the signing speed while still using MLDSA-pure instead of Hash-MLDSA
+optimize the signing speed while still using ML-DSA-pure instead of Hash-ML-DSA
 for security considerations. The signing is done with the default "hedged"-signing
 over "deterministic"-signing and implements a good DRBG to achieve this.
 
@@ -19,7 +19,7 @@ NIST, KAT and ACVP test framework that can be used to test the algorithm.
 Tests to run and stresstest the mldsa signing on protocol level and to use to test
 a tkey is also added.
 
-See [MLDSA Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html) for more information about hedged vs deterministic signing and external MU computation.
+See [ML-DSA Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html) for more information about hedged vs deterministic signing and external MU computation.
 
 See [Release notes](RELEASE.md).
 
