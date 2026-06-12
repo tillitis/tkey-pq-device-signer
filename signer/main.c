@@ -32,7 +32,7 @@ static volatile uint32_t *hw_timer_ctrl      = (volatile uint32_t *)TK1_MMIO_TIM
 // clang-format on
 
 #ifdef TKEY_DEBUG
-#define CPUFREQ          18000000
+#define CPUFREQ          24000000
 #define TIMER_MS_PRESCALER (CPUFREQ / 1000)
 #define TIMER_INIT_VAL   0x7FFFFFFFU
 
