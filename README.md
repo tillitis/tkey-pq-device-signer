@@ -2,24 +2,30 @@
 
 # Tillitis TKey PQ-Signer
 
-The TKey `tkey-pq-device-signer` device application is an ml-dsa-44 signing tool. It
-can sign messages up to 4 kByte. It is, for instance, used by the
-[tkey-pq-sign-cli](https://github.com/tillitis/tkey-pq-sign-cli) for doing
-digital signatures of files.
+The TKey `tkey-pq-device-signer` device application is an ml-dsa-44
+signing tool. It can sign messages up to 4 kByte. It is, for instance,
+used by the
+[tkey-pq-sign-cli](https://github.com/tillitis/tkey-pq-sign-cli) for
+doing digital signatures of files.
 
-The `tkey-pq-device-signer` is using signing by the use of external MU instead of computing
-it on the tkey to make it possible to sign larger files, use less RAM and to
-optimize the signing speed while still using ML-DSA-pure instead of Hash-ML-DSA
-for security considerations. The signing is done with the default "hedged"-signing
-over "deterministic"-signing and implements a good DRBG to achieve this.
+The `tkey-pq-device-signer` is using signing by the use of external MU
+instead of computing it on the tkey to make it possible to sign larger
+files, use less RAM and to optimize the signing speed while still
+using ML-DSA-pure instead of Hash-ML-DSA for security considerations.
+The signing is done with the default "hedged"-signing over
+"deterministic"-signing and implements a good DRBG to achieve this.
 
-The library mldsa-native is used to add mldsa support and it has tests according to
-NIST, KAT and ACVP test framework that can be used to test the algorithm.
+The library mldsa-native is used to add mldsa support and it has tests
+according to NIST, KAT and ACVP test framework that can be used to
+test the algorithm.
 
 Tests to run and stresstest the mldsa signing on protocol level and to use to test
 a tkey is also added.
 
-See [ML-DSA Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html) for more information about hedged vs deterministic signing and external MU computation.
+See [ML-DSA
+Draft](https://www.ietf.org/archive/id/draft-connolly-cfrg-ml-dsa-security-considerations-01.html)
+for more information about hedged vs deterministic signing and
+external MU computation.
 
 See [Release notes](RELEASE.md).
 
@@ -27,7 +33,9 @@ See [Release notes](RELEASE.md).
 
 We provide a Go package to use with `tkey-pq-device-signer`:
 
-- https://github.com/tillitis/tkey-pq-device-sign [![Go Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkey-pq-device-sign)
+- [https://github.com/tillitis/tkey-pq-device-sign](https://github.com/tillitis/tkey-pq-device-sign)
+[![Go
+Reference](https://pkg.go.dev/badge/github.com/tillitis/tkeysign.svg)](https://pkg.go.dev/github.com/tillitis/tkey-pq-device-sign)
 
 ## Signer application protocol
 
@@ -80,12 +88,12 @@ Typical use by a client application:
 2. If firmware is found, load `tkey-pq-device-signer`.
 3. Upon receiving the device app digest back from firmware, switch to
    start talking the `tkey-pq-device-signer` protocol above.
-4. Send `CMD_GET_PUBKEY` to receive the `tkey-pq-device-signer`'s public key. If the
-   public key is already stored, check against it so it's the expected
-   key.
+4. Send `CMD_GET_PUBKEY` to receive the `tkey-pq-device-signer`'s
+   public key. If the public key is already stored, check against it
+so it's the expected key.
 5. Send `CMD_SET_SIZE` to set the size of the message to sign.
-6. Send repeated messages with `CMD_LOAD_DATA` to send the
-   entire message.
+6. Send repeated messages with `CMD_LOAD_DATA` to send the entire
+   message.
 7. Send `CMD_GET_SIG` to get the signature over the message.
 
 **Please note**: The firmware detection mechanism is not by any means
@@ -114,7 +122,7 @@ that file.
 The current set of valid, predefined SPDX identifiers can be found on
 the SPDX License List at:
 
-https://spdx.org/licenses/
+[https://spdx.org/licenses/](https://spdx.org/licenses/)
 
 We attempt to follow the [REUSE
 specification](https://reuse.software/).
@@ -136,7 +144,7 @@ to this one.
 If you want to use a pre-built libraries, download the libraries tar
 ball from
 
-https://github.com/tillitis/tkey-libs/releases
+[https://github.com/tillitis/tkey-libs/releases](https://github.com/tillitis/tkey-libs/releases)
 
 unpack it, and specify where you unpacked it in `LIBDIR` when
 building:
