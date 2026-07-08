@@ -3,8 +3,7 @@
 # Tillitis TKey PQ-Signer
 
 The TKey `tkey-pq-device-signer` device application is an ml-dsa-44
-signing tool. It can sign messages up to 4 kByte. It is, for instance,
-used by the
+signing tool. It is, for instance, used by the
 [tkey-pq-sign-cli](https://github.com/tillitis/tkey-pq-sign-cli) for
 doing digital signatures of files.
 
@@ -81,20 +80,21 @@ the firmware (endpoint = `DST_FW`). This is recommended for
 well-behaved device applications so the client side can probe for the
 firmware.
 
-Typical use by a client application:
+### Typical Client workflow
 
 1. Probe for firmware by sending firmware's `GET_NAME_VERSION` with FP
    header endpoint = `DST_FW`.
 2. If firmware is found, load `tkey-pq-device-signer`.
 3. Upon receiving the device app digest back from firmware, switch to
    start talking the `tkey-pq-device-signer` protocol above.
-4. Send `CMD_GET_PUBKEY` to receive the `tkey-pq-device-signer`'s
+4. Send repeated `CMD_GET_PUBKEY` to receive the `tkey-pq-device-signer`'s
    public key. If the public key is already stored, check against it
-so it's the expected key.
-5. Send `CMD_SET_SIZE` to set the size of the message to sign.
-6. Send repeated messages with `CMD_LOAD_DATA` to send the entire
-   message.
-7. Send `CMD_GET_SIG` to get the signature over the message.
+   so it's the expected key.
+5. Send `CMD_SET_SIZE` to set the size of the payload to sign. With
+   `tkey-pq-device-signer` this is always 64 because external Mu is used in next steps.
+6. Calculate FIPS 204 external Mu for the message, send `CMD_LOAD_DATA`
+   with the external mu as payload.
+8. Send repeated `CMD_GET_SIG` to get the signature over the message.
 
 **Please note**: The firmware detection mechanism is not by any means
 secure. If in doubt a user should always remove the TKey and insert it
