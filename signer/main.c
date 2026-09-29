@@ -1,19 +1,20 @@
 // SPDX-FileCopyrightText: 2022 Tillitis AB <tillitis.se>
 // SPDX-License-Identifier: BSD-2-Clause
 
+#include <assert.h>
 #include <mldsa_native.h>
 #include <monocypher/monocypher-ed25519.h>
 #include <stdbool.h>
-#include <tkey/assert.h>
+#include <string.h>
 #include <tkey/debug.h>
 #include <tkey/io.h>
 #include <tkey/led.h>
 #include <tkey/proto.h>
+#include <tkey/syscall.h>
 #include <tkey/tk1_mem.h>
 #include <tkey/touch.h>
 
 #include "app_proto.h"
-#include "platform.h"
 #include "rng.h"
 
 // clang-format off
@@ -23,7 +24,6 @@ static volatile uint32_t *cpu_mon_first = (volatile uint32_t *) TK1_MMIO_TK1_CPU
 static volatile uint32_t *cpu_mon_last  = (volatile uint32_t *) TK1_MMIO_TK1_CPU_MON_LAST;
 static volatile uint32_t *app_addr      = (volatile uint32_t *) TK1_MMIO_TK1_APP_ADDR;
 static volatile uint32_t *app_size      = (volatile uint32_t *) TK1_MMIO_TK1_APP_SIZE;
-static volatile uint32_t *ver		= (volatile uint32_t *) TK1_MMIO_TK1_VERSION;
 #ifdef TKEY_DEBUG
 static volatile uint32_t *hw_timer           = (volatile uint32_t *)TK1_MMIO_TIMER_TIMER;
 static volatile uint32_t *hw_timer_prescaler = (volatile uint32_t *)TK1_MMIO_TIMER_PRESCALER;
@@ -100,6 +100,20 @@ static void wipe_context(struct context *ctx)
 	ctx->msg_idx = 0;
 }
 
+// reset performs a TK1_SYSCALL_RESET with the given reset type and a
+// single byte of next-app data, matching the wire format of
+// CMD_RESET. Does not return on success; the device resets
+// immediately.
+static void reset(uint8_t reset_type, uint8_t next_app_data)
+{
+	struct reset rst = {0};
+
+	rst.type = reset_type;
+	rst.next_app_data[0] = next_app_data;
+
+	sys_reset(&rst, 1);
+}
+
 // started_commands() allows only these commands:
 //
 // - CMD_FW_PROBE
@@ -156,7 +170,7 @@ static enum state started_commands(enum state state, struct context *ctx,
 
 		debug_puts("APP_CMD_GET_FIRMWARE_HASH\n");
 		if (pkt.hdr.len != 32) {
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_GET_FIRMWARE_HASH, rsp);
 
 			state = STATE_FAILED;
@@ -168,14 +182,14 @@ static enum state started_commands(enum state state, struct context *ctx,
 
 		if (fw_len == 0 || fw_len > 8192) {
 			debug_puts("FW size must be > 0 and <= 8192\n");
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_GET_FIRMWARE_HASH, rsp);
 
 			state = STATE_FAILED;
 			break;
 		}
 
-		rsp[0] = STATUS_OK;
+		rsp[0] = FRAME_STATUS_OK;
 		crypto_sha512(&rsp[1], (void *)TK1_ROM_BASE, fw_len);
 		appreply(pkt.hdr, RSP_GET_FIRMWARE_HASH, rsp);
 
@@ -214,7 +228,7 @@ static enum state started_commands(enum state state, struct context *ctx,
 		debug_puts("CMD_SET_SIZE\n");
 		// Bad length
 		if (pkt.hdr.len != 32) {
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_SET_SIZE, rsp);
 
 			state = STATE_FAILED;
@@ -227,7 +241,7 @@ static enum state started_commands(enum state state, struct context *ctx,
 
 		if (local_message_size != MLDSA44_CRHBYTES) {
 			debug_puts("mu size must be exactly MLDSA44_CRHBYTES (64)\n");
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_SET_SIZE, rsp);
 
 			state = STATE_FAILED;
@@ -240,7 +254,7 @@ static enum state started_commands(enum state state, struct context *ctx,
 		ctx->left = ctx->message_size;
 		ctx->msg_idx = 0;
 
-		rsp[0] = STATUS_OK;
+		rsp[0] = FRAME_STATUS_OK;
 		appreply(pkt.hdr, RSP_SET_SIZE, rsp);
 
 		state = STATE_LOADING;
@@ -279,7 +293,7 @@ static enum state loading_commands(enum state state, struct context *ctx,
 
 		// Bad length
 		if (pkt.hdr.len != CMDLEN_MAXBYTES) {
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_LOAD_DATA, rsp);
 
 			state = STATE_FAILED;
@@ -298,7 +312,7 @@ static enum state loading_commands(enum state state, struct context *ctx,
 		ctx->msg_idx += nbytes;
 		ctx->left -= nbytes;
 
-		rsp[0] = STATUS_OK;
+		rsp[0] = FRAME_STATUS_OK;
 		appreply(pkt.hdr, RSP_LOAD_DATA, rsp);
 
 		if (ctx->left == 0) {
@@ -354,7 +368,7 @@ static enum state signing_commands(enum state state, struct context *ctx,
 		touched = touch_wait(LED_GREEN, TOUCH_TIMEOUT);
 
 		if (!touched) {
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_GET_SIG, rsp);
 
 			state = STATE_STARTED;
@@ -370,7 +384,7 @@ static enum state signing_commands(enum state state, struct context *ctx,
 		if(mldsa_signature_extmu(signature, &siglen, ctx->message,
 				 ctx->secret_key) != 0) {
 			debug_puts("Signing failed!\n");
-			rsp[0] = STATUS_BAD;
+			rsp[0] = FRAME_STATUS_NOK;
 			appreply(pkt.hdr, RSP_GET_SIG, rsp);
 
 			state = STATE_STARTED;
@@ -394,7 +408,7 @@ static enum state signing_commands(enum state state, struct context *ctx,
 				int nbytes = sig_remaining > CMDLEN_MAXBYTES - 2
 						 ? CMDLEN_MAXBYTES - 2 : sig_remaining;
 				memset(rsp, 0, sizeof(rsp));
-				rsp[0] = STATUS_OK;
+				rsp[0] = FRAME_STATUS_OK;
 				memcpy_s(rsp + 1, CMDLEN_MAXBYTES - 1,
 					 signature + sig_offset, nbytes);
 				appreply(pkt.hdr, RSP_GET_SIG, rsp);
@@ -424,71 +438,24 @@ static enum state signing_commands(enum state state, struct context *ctx,
 
 // read_command takes a frame header and a command to fill in after
 // parsing. It returns 0 on success.
+//
+// frame_read() reads and parses the header and reads the payload,
+// handling the Castor CDC vs. Bellatrix UART difference internally.
 static int read_command(struct frame_header *hdr, uint8_t *cmd)
 {
-	uint8_t in = 0;
-	uint8_t available = 0;
-	enum ioend endpoint = IO_NONE;
-
 	memset(hdr, 0, sizeof(struct frame_header));
 	memset(cmd, 0, CMDLEN_MAXBYTES);
 
-	if (*ver >= CASTORVERSION) {
-		if (readselect(IO_CDC, &endpoint, &available) < 0) {
-			debug_puts("readselect error");
-			return -1;
-		}
-
-		if (read(IO_CDC, &in, 1, 1) < 0) {
-			return -1;
-		}
-	} else {
-		if (uart_read(&in, 1, 1) < 0) {
-			return -1;
-		}
-	}
-
-	if (parseframe(in, hdr) == -1) {
-		debug_puts("Couldn't parse header\n");
+	if (frame_read(cmd, CMDLEN_MAXBYTES, hdr) < 0) {
+		debug_puts("frame_read failed\n");
 		return -1;
-	}
-
-	if (*ver >= CASTORVERSION) {
-		for (uint8_t n = 0; n < hdr->len;) {
-			if (readselect(IO_CDC, &endpoint, &available) < 0) {
-				debug_puts("readselect error");
-				return -1;
-			}
-
-			// Read as much as is available of what we expect from
-			// the frame.
-			available = available > hdr->len ? hdr->len : available;
-
-			debug_puts("reading ");
-			debug_putinthex(available);
-			debug_lf();
-
-			int nbytes = read(IO_CDC, &cmd[n], CMDLEN_MAXBYTES - n,
-					  available);
-			if (nbytes < 0) {
-				debug_puts("read: buffer overrun\n");
-
-				return -1;
-			}
-
-			n += nbytes;
-		}
-	} else {
-		if (uart_read(cmd, CMDLEN_MAXBYTES, hdr->len) < 0) {
-			return -1;
-		}
 	}
 
 	// Well-behaved apps are supposed to check for a client
 	// attempting to probe for firmware. In that case destination
 	// is firmware and we just reply NOK, discarding all bytes
 	// already read.
-	if (hdr->endpoint == DST_FW) {
+	if (hdr->f_domain == DST_FW) {
 		appreply_nok(*hdr);
 		debug_puts("Responded NOK to message meant for fw\n");
 		cmd[0] = CMD_FW_PROBE;
@@ -498,9 +465,9 @@ static int read_command(struct frame_header *hdr, uint8_t *cmd)
 
 	// Is it for us? If not, return error after having discarded
 	// all bytes.
-	if (hdr->endpoint != DST_SW) {
-		debug_puts("Message not meant for app. endpoint was 0x");
-		debug_puthex(hdr->endpoint);
+	if (hdr->f_domain != DST_SW) {
+		debug_puts("Message not meant for app. domain was 0x");
+		debug_puthex(hdr->f_domain);
 		debug_lf();
 
 		return -1;
@@ -514,7 +481,7 @@ int main(void)
 	struct context ctx = {0};
 	enum state state = STATE_STARTED;
 	struct packet pkt = {0};
-	
+
 	// Initialize RNG
 	rng_init();
 
@@ -522,8 +489,6 @@ int main(void)
 	*cpu_mon_first = *app_addr + *app_size;
 	*cpu_mon_last = TK1_RAM_BASE + TK1_RAM_SIZE;
 	*cpu_mon_ctrl = 1;
-
-	led_set(LED_BLUE);
 
 #ifdef TKEY_DEBUG
 	config_endpoints(IO_CDC | IO_DEBUG);
@@ -540,9 +505,24 @@ int main(void)
 		debug_putinthex(state);
 		debug_lf();
 
+		// LED is off while idle, on while actively loading or
+		// signing a message. touch_wait() (called from
+		// signing_commands()) takes over blinking the LED while
+		// waiting for touch and restores this value afterwards.
+		led_set(state == STATE_STARTED ? LED_BLACK : LED_BLUE);
+
 		if (read_command(&pkt.hdr, pkt.cmd) != 0) {
 			debug_puts("read_command returned != 0!\n");
 			state = STATE_FAILED;
+		}
+
+		// CMD_RESET is accepted regardless of protocol state and
+		// regardless of the malformed/well-formed frame checks the
+		// per-state command handlers do for other commands.
+		if (pkt.cmd[0] == CMD_RESET && pkt.hdr.len == 4) {
+			debug_puts("CMD_RESET\n");
+			reset(pkt.cmd[1], pkt.cmd[2]);
+			// Not reached; the device resets immediately.
 		}
 
 		switch (state) {

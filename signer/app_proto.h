@@ -23,6 +23,13 @@ enum appcmd {
 	CMD_GET_FIRMWARE_HASH = 0x0b,
 	RSP_GET_FIRMWARE_HASH = 0x0c,
 
+	// CMD_RESET is the standardized reset command also implemented
+	// by e.g. tkey-fido2 and tkey-boot-verifier's verifier, letting a
+	// client ask whatever app is running to reset the TKey. It's
+	// accepted regardless of the signer's protocol state and sends
+	// no response; the device resets immediately.
+	CMD_RESET	    = 0xfe,
+
 	CMD_FW_PROBE	    = 0xff,
 };
 // clang-format on
