@@ -2,17 +2,22 @@
 
 # Tillitis TKey PQ-Signer
 
+> ℹ️ This branch is for demo purpose
+>
 > **`castor-support-demo` branch:** adds support for the standardized
 > reset command (`CMD_RESET`), letting a client ask the signer to
 > reset the TKey back to its default boot path (e.g. back to
 > `tkey-fido2` on a Castor TKey with a verified boot chain in flash).
+>
 > Requires tkey-libs `TK1-Q-beta-1` — `build.sh`/`build-podman.sh`
 > check this out automatically, but a manually supplied `LIBDIR` must
 > also be that version, since older tkey-libs releases have an
 > incompatible ABI. No other special build steps beyond the usual
-> `make`. To test end to end, use `tkey-pq-sign-cli`'s `-r`/`--reset`
+> `make`.
+>
+> To test end to end, use `tkey-pq-sign-cli`'s `-r`/`--reset`
 > on its own `castor-support-demo` branch, against a real Castor TKey
-> or the `tk1-castor` QEMU machine. This branch is for demo purpose.
+> or the `tk1-castor` QEMU machine.
 
 The TKey `tkey-pq-device-signer` device application is an ml-dsa-44
 signing tool. It can sign messages up to 4 kByte. It is, for instance,
